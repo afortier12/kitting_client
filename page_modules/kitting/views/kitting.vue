@@ -2,12 +2,29 @@
 	<integrity-table  v-if="hasList" :name="pageName" :collection="main_collection" :columns="columns" @select="onSelect">
 	</integrity-table>
 	<div v-else class="d-flex justify-content-center">
-  		<div class="spinner-border" role="status">
+		<div class="container-fluid">
+  			<div class="row justify-content-center">
+ 				<div class="spinner-border" role="status">
+           			<span class="sr-only">Loading...</span>
+       			</div>
+			</div>
+			<div class="row justify-content-center">
+            	<strong>{{ update_msg }}</strong>
+			</div>
 		</div>
-		<p>{{ update_msg }}</p>
 	</div>
+
 </template>
 
+<style scoped>
+.custom-loading-text {
+    transform: rotate(-90deg);
+    position: absolute;
+    top: -1.5rem;
+    left: -1rem;
+    white-space: nowrap;
+}
+</style>
 
 <script>
 
@@ -83,7 +100,10 @@ module.exports = {
         
 		}, // --- End of methods --- //
         watch: {
-
+			kit_data_service: function(val){
+				if (val !== null)
+					this.retrieveKits();
+			},
 		},  // --- End of watch --- //
 		// Available hooks: init,mounted,created,updated,destroyed
 		created: function(){
@@ -95,10 +115,10 @@ module.exports = {
 					properties[key]= key
 				}
 			}
-    		this.$parent.$emit('update:properties', properties);
+			this.$parent.$emit('update:properties',properties);
 		},
 		mounted: function(){
-			this.retrieveKits();
+
         } // --- End of mounted hook --- //
 }
 </script>

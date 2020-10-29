@@ -15,7 +15,7 @@
 		<!-- APP-TEMPLATE -->
 		<div class="app-container">
 			<keep-alive>
-				<router-view :kit_data_service="kit_data_service" v-bind="properties"/>
+				<router-view v-bind="componentProperties"/>
 			</keep-alive>
 		</div>
 	</div>

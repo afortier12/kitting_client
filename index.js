@@ -1,7 +1,7 @@
 'use strict'
 
 import {socket} from './http-common.js';
-import router from './router-client.js';
+import router from './router.js';
 import {dataservice as KitDataService} from '../services/KitDataService.js'
 
 
@@ -11,12 +11,20 @@ const vm = new Vue({
     data: {
         update_msg: 'Waiting for server...',
         update_value: 0,
-        properties:  {},
-        layout: 'div',
         kit_data_service: KitDataService,
+        properties: {},
     },
     computed: {
-
+        componentProperties () {
+            if (Object.keys(this.properties).length !== 0){
+                var component_props = {}
+                for (var key in this.properties){
+                    if (key in this.$data)
+                        component_props[key] = this.$data[key]
+                }   
+                return component_props;
+            }
+        },
     },// --- End of computed --- //
     methods: {
         
@@ -31,7 +39,6 @@ const vm = new Vue({
     },
     mounted: function(){
 
-        console.log(this.$route.path)
         var vueApp = this
         var reconnectTimeout = 2000
         MQTTConnect()

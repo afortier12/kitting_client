@@ -64,6 +64,19 @@ module.exports = {
         watch: {
 
 		},  // --- End of watch --- //
+		created: function(){
+			var key;
+			var properties = {}
+			for(key in this.$props){
+				console.log(key)
+				// using Object.hasOwnProperty to find if a property is directly on an object
+				if(this.$props.hasOwnProperty(key)){
+					properties[key]= key
+				}
+			}
+			console.log(properties)
+    		this.$parent.$emit('update:properties',properties);
+		},
         // Available hooks: init,mounted,created,updated,destroyed
 		mounted: function(){
 			this.retrieveItems();

@@ -26,5 +26,6 @@ export default {
             path: "/:catchAll(.*)",
             component: NotFound,
         },
+        
     ],
 };
