@@ -5,14 +5,12 @@ var url = require('url')
 
 http.createServer(function (request, response) {
 	console.log('request starting...')
-
-	var status = request.statusCode
-	var filePath = '.' + request.url
+	const parsedUrl = url.parse(request.url)
+	var pathname = parsedUrl.pathname;
+	var filePath = '.' + pathname
 	if (filePath == './')
 		filePath = './index.html'
 
-	const parsedUrl = url.parse(request.url)
-	var pathname = parsedUrl.pathname;
 	var extname = path.extname(pathname)
 	var contentType = 'text/html'
 	switch (extname) {

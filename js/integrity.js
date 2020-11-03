@@ -3,6 +3,7 @@ const params = new URLSearchParams(window.location.search)
 
 Integrity.standardSuccess = (data) => {
 	toastr.success("Loaded")
+
 }
 
 Integrity.standardDebugSuccess = (data) => {
@@ -17,10 +18,11 @@ Integrity.standardError = (err) => {
 Integrity.standardDebugError = (err) => {
 	console.log(err)
 	toastr.error(err.responseText)
+
 }
 
 Integrity.get = (url, success = Integrity.standardSuccess, error = Integrity.standardError) => {
-	$.ajax({
+	return $.ajax({
 		url: url,
 		success: success,
 		error: error

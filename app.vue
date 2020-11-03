@@ -26,11 +26,6 @@
 	<script src="/js/integrity-table.js"></script>
 	<script src="/js/integrity-navbar.js"></script>
 	<script src="/js/integrity-drawer.js"></script>
-	<script src="/index.js" type ="module"></script>    <!-- added for easier module imports -->
-	<script src="/lib/js/vue-router.min.js"></script>   <!-- added for client-side routing -->
-	<script src="/lib/js/vuex.min.js"></script>   		<!-- added for state management -->
-	<script src="/lib/js/httpVueLoader.js"></script>  	<!-- added for client-side routing -->
-	<script src="/lib/js/axios.min.js"></script>		<!-- added for server API comms -->
 	<script src="/lib/js/paho-mqtt.js"></script>		<!-- added for server mqtt comms -->
 
 </head>
