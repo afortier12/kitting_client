@@ -13,21 +13,26 @@
 <!-- XTEMPLATES -->
 <div id="app" v-cloak>
 	<!-- APP-TEMPLATE -->
-	<div class="app-container" v-if="hasList">
-		<button type="button" class="btn btn-primary mb-3 mr-5">Pick Kit</button>
-		<button type="button" class="btn btn-primary mb-3">Put Kit</button>
-	</div>
-	<integrity-table v-if="hasList" :name="getTitle" :collection="kit_list" :columns="columns">
-	</integrity-table>
-	<div v-else class="d-flex justify-content-center">
-		<div class="container-fluid">
-			<div class="row justify-content-center">
-				<div class="spinner-border" role="status">
-					<span class="sr-only">Loading...</span>
+	<div class="app-container">
+		<div v-if="hasList">
+			<button type="button" class="btn btn-primary mb-3 mr-5">Pick Kit</button>
+			<button type="button" class="btn btn-primary mb-3">Put Kit</button>
+			<h1>{{pageName}}</h1>
+		</div>
+	
+		<integrity-table  v-if="hasList" :name="getTitle" :collection="kit_list" :columns="columns">
+		</integrity-table>
+	
+		<div v-else class="d-flex justify-content-center">
+			<div class="container-fluid">
+				<div class="row justify-content-center">
+					<div class="spinner-border" role="status">
+						<span class="sr-only">Loading...</span>
+					</div>
 				</div>
-			</div>
-			<div class="row justify-content-center">
-				<strong>{{ update_msg }}</strong>
+				<div class="row justify-content-center">
+					<strong>{{ update_msg }}</strong>
+				</div>
 			</div>
 		</div>
 	</div>
@@ -47,18 +52,18 @@
 <script>
 	/* APP-SCRIPT */
 
-	var host = "localhost"
+	var host = "10.0.15.70"
 	var ws_port = 8201
-	var port = 1880
+	var port = 1891
 
-	var baseUrl = "http://" + host + ":" + port + "/kitting";
+	var baseUrl = "http://" + host + ":" + port + "/flows-1/api/kitting";
 
 	const vm = new Vue({
     el: "#app",
     data() {
         return {
 			pageName: 'Kitting Inventory',	  
-			columns: ["Detail", "Part Number", "Description", "Material", " Quantity"],
+			columns: ["Detail", "Part Number", "Description", "Material", " Required Quantity", "In-stock Quantity"],
 			kit_list: [],
 			kit_name: '',
 			update_msg: 'Waiting for server...',
@@ -67,7 +72,7 @@
     },
     computed: {
 		getTitle: function() {
-            var title = "Kit#: " + this.kit_name + " " + this.pageName
+            var title = this.kit_name
  			return title
 		},
 		hasList: function() {
@@ -100,7 +105,7 @@
 					if (response === null)
 						vm.kit_list = [{name: "No items found", detail:"N/A", description:"N/A", type:"N/A", requested_quantity:0, stock_quantity:0}]
 					else
-						vm.kit_list = response
+						vm.kit_list = response.data
 				})
 				.fail(function(err) {
 					vm.kit_list = [{name: "Err", detail:"Err", description:"Err", type:"Err", requested_quantity:-1, stock_quantity:-1}]
@@ -114,6 +119,9 @@
 		},  // --- End of watch --- //
 		created: function(){
 			var query = location.search
+			const params = new URLSearchParams(query)
+			this.kit_name = params.get('name')
+			this.kit_name.replace(/%20/g, " ")
 			this.retrieveItems(query)
 		},
         // Available hooks: init,mounted,created,updated,destroyed
