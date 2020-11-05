@@ -15,8 +15,21 @@
 	<!-- APP-TEMPLATE -->
 	<div class="app-container">
 		<div v-if="hasList">
-			<button type="button" class="btn btn-primary mb-3 mr-5">Pick Kit</button>
-			<button type="button" class="btn btn-primary mb-3">Put Kit</button>
+			<div class="d-flex align-items-start bd-highlight mb-3 justify-content-between">
+				<div class="d-flex align-items-start bd-highlight mb-3 justify-content-start">
+					<button type="button" class="btn btn-primary mb-3 mr-5 align-self-center">Pick Kit</button>
+					<div :class="pickClass" :role="alert">
+						{{ pick_message }}
+					</div>
+				</div>
+				<div class="d-flex align-items-start bd-highlight mb-3 justify-content-end">
+					<button type="button" class="btn btn-primary mb-3 mr-5 align-self-center">Put Kit</button>
+					<div :class="putClass" :role="alert">
+						{{ put_message }}
+					</div>
+				</div>
+			</div>
+			
 			<h1>{{pageName}}</h1>
 		</div>
 	
@@ -27,7 +40,7 @@
 			<div class="container-fluid">
 				<div class="row justify-content-center">
 					<div class="spinner-border" role="status">
-						<span class="sr-only">Loading...</span>
+						<span class="sr-only">Loading...</span>``
 					</div>
 				</div>
 				<div class="row justify-content-center">
@@ -46,17 +59,25 @@
     left: -1rem;
     white-space: nowrap;
 }
+
 </style>
 
 
 <script>
 	/* APP-SCRIPT */
 
-	var host = "10.0.15.70"
+	var type = "https://"		//"http://"
+	var host = "10.0.15.70"		//"localhost"
 	var ws_port = 8201
-	var port = 1891
+	var port = -1			//-1
+	var path = "/flows-1/api/kitting"		//"/kitting"
 
-	var baseUrl = "http://" + host + ":" + port + "/flows-1/api/kitting";
+	var baseUrl = type + host
+	
+	if (port > 0)
+		baseUrl = baseUrl + ":" + port + path;
+	else
+		baseUrl = baseUrl + path;
 
 	const vm = new Vue({
     el: "#app",
@@ -67,7 +88,12 @@
 			kit_list: [],
 			kit_name: '',
 			update_msg: 'Waiting for server...',
-        	update_value: 0,
+			update_value: 0,
+			pick_status: 1,
+			put_status: 0,
+			pick_message: 'Kit ready for assembly',
+			put_message: 'Waiting for kit to be assembled',
+			alert: 'alert',
         };
     },
     computed: {
@@ -76,8 +102,57 @@
  			return title
 		},
 		hasList: function() {
-            return this.kit_list.length > 0;
-	    },
+            return this.kit_list.length > 0
+		},
+		pickClass: function(){
+
+			var status = this.pick_status
+			var pick_class = ''
+			switch(status){
+				case 0:
+					pick_class = 'alert alert-dark align-self-center'		//gray - not ready
+					break
+				case 1:
+					pick_class = 'alert alert-primary align-self-center' 	//blue -  ready to pick
+					break
+				case 2:
+					pick_class = 'alert alert-warning align-self-center' 	//yellow - picked being assembled
+					break
+				case 3:
+					pick_class = 'alert alert-success align-self-center'	//green - returned to Kardex
+					break
+				case 4:
+					pick_class = 'alert alert-danger align-self-center'		//red - Kit delivered
+					break
+				default:
+					put_class = 'alert alert-light align-self-center'
+			}
+			return pick_class
+
+		},
+		putClass: function(){
+	
+			var status = this.put_status
+			var put_class = ''
+			switch(status){
+				case 0:
+					put_class = 'alert alert-dark align-self-center'		//gray - waiting for pick
+					break
+				case 1:
+					put_class = 'alert alert-primary align-self-center' 	//blue -  ready to put
+					break
+				case 2:
+					put_class = 'alert alert-danger align-self-center' 	//red - delivered
+					break
+				case 3:
+					put_class = 'alert alert-success align-self-center'		//green - returned to Kardex
+					break
+				default:
+					put_class = 'alert alert-light align-self-center'
+			}	
+			return put_class
+		},
+		
     },// --- End of computed --- //
 		methods: {
 			cellStyleClass(item, field){
@@ -113,15 +188,18 @@
 				});
 
 			},
+
 		}, // --- End of methods --- //
         watch: {
 
 		},  // --- End of watch --- //
 		created: function(){
-			var query = location.search
+			this.put_status = 1
+			var query = decodeURIComponent(location.search)
 			const params = new URLSearchParams(query)
 			this.kit_name = params.get('name')
-			this.kit_name.replace(/%20/g, " ")
+			this.kit_name = this.kit_name.replace(/%20/g, " ")
+			query = query.replace(/%20/g, " ")
 			this.retrieveItems(query)
 		},
         // Available hooks: init,mounted,created,updated,destroyed
@@ -164,9 +242,20 @@
 			function onMessageArrived(msg) {
 				console.log(msg.destinationName + " : " + msg.payloadString)
 				if (msg.destinationName === "message")
-					vueApp.update_msg = msg.payloadString
-				else if (msg.destinationName === "value")
-					vueApp.update_value = msg.payloadString
+					var msg_obj = JSON.parse(msg.payloadString)
+					if (msg_obj.hasOwnProperty("message") && msg_obj.hasOwnProperty("mode") && msg_obj.hasOwnProperty("value")){
+						var mode = msg_obj.mode
+						if (mode == 'pick'){
+							vueApp.pick_status = msg_obj.value
+							vueApp.pick_message = msg_obj.message
+						} else if(mode == 'put'){
+							vueApp.put_status = msg_obj.value
+							vueApp.put_message = msg_obj.message
+						} else {
+							vueApp.update_msg = msg_obj.message
+							vueApp.update_value = msg_obj.value
+						}
+					}
 				else if (msg.destinationName === "kit")
 					vueApp.kit_name = msg.payloadString
 			}

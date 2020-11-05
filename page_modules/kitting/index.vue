@@ -44,11 +44,18 @@
 <script>
 	/* APP-SCRIPT */
 
-	var host = "10.0.15.70"
+	var type = "https://"		//"https://"
+	var host = "10.0.15.70"		//"10.0.15.70"
 	var ws_port = 8201
-	var port = 1891
+	var port = -1			//-1
+	var path = "/flows-1/api/kitting"		//"/flows-1/api/kitting"
 
-	var baseUrl = "http://" + host + ":" + port + "/flows-1/api/kitting";
+	var baseUrl = type + host
+	
+	if (port > 0)
+		baseUrl = baseUrl + ":" + port + path;
+	else
+		baseUrl = baseUrl + path;
 
 	const vm = new Vue({
     el: "#app",
@@ -165,8 +172,11 @@
         }
         function onMessageArrived(msg) {
             console.log(msg.destinationName + " : " + msg.payloadString)
-            if (msg.destinationName === "message")
-                vueApp.update_msg = msg.payloadString
+			if (msg.destinationName === "message")
+				var msg_obj = JSON.parse(msg.payloadString)
+				if (msg_obj.hasOwnProperty("message") && msg_obj.hasOwnProperty("mode") && msg_obj.hasOwnProperty("value")){
+					vueApp.update_msg = msg_obj.message
+				}
             else if (msg.destinationName === "value")
                 vueApp.update_value = msg.payloadString
             else if (msg.destinationName === "kit")
