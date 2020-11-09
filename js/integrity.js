@@ -31,7 +31,7 @@ Integrity.get = (url, success = Integrity.standardSuccess, error = Integrity.sta
 
 
 Integrity.post = (url, data = null, success = Integrity.standardDebugSuccess, error = Integrity.standardError) => {
-	$.ajax({
+	return $.ajax({
 		url: url,
 		method: "POST",
 		data: data ? JSON.stringify(data) : null,
@@ -41,7 +41,7 @@ Integrity.post = (url, data = null, success = Integrity.standardDebugSuccess, er
 }
 
 Integrity.getDebug = (url, success = Integrity.standardDebugSuccess, error = Integrity.standardDebugError) => {
-	$.ajax({
+	return $.ajax({
 		url: url,
 		success: success,
 		error: error
@@ -50,7 +50,7 @@ Integrity.getDebug = (url, success = Integrity.standardDebugSuccess, error = Int
 
 
 Integrity.postDebug = (url, data = null, success = Integrity.standardSuccess, error = Integrity.standardDebugError) => {
-	$.ajax({
+	return $.ajax({
 		url: url,
 		method: "POST",
 		data: data ? JSON.stringify(data) : null,

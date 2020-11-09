@@ -1,8 +1,9 @@
 let fs = require("fs")
 let path = require('path')
+let config = require('./config.js')
 
 let state = {
-	"env": "dev",
+	"env": config.NODE_ENV,
 	"mode": "all",
 	"file": "",
 	"htmlTemplate": "",
@@ -101,6 +102,17 @@ function build() {
 		}
 		runBuild(path.join(__dirname, ModuleDir, state["file"]))
 	}
+
+	//create config file
+	try {
+		fs.mkdirSync(path.join(__dirname, OutputDir))
+	} catch (err) {
+		if (err.code === 'EEXIST') {
+		} else {
+			throw err
+		}
+	}
+	fs.writeFileSync(path.join(__dirname, OutputDir, "runtime_config.json"), JSON.stringify(config))
 }
 
 function runBuild(name) {
@@ -122,3 +134,4 @@ function runBuild(name) {
 
 	fs.writeFileSync(name, data)
 }
+

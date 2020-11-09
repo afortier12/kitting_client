@@ -43,19 +43,7 @@
 
 <script>
 	/* APP-SCRIPT */
-
-	var type = "https://"		//"https://"
-	var host = "10.0.15.70"		//"10.0.15.70"
-	var ws_port = 8201
-	var port = -1			//-1
-	var path = "/flows-1/api/kitting"		//"/flows-1/api/kitting"
-
-	var baseUrl = type + host
-	
-	if (port > 0)
-		baseUrl = baseUrl + ":" + port + path;
-	else
-		baseUrl = baseUrl + path;
+	const refreshListTimeout = 900000  //15min in ms 
 
 	const vm = new Vue({
     el: "#app",
@@ -70,120 +58,117 @@
     computed: {
 		hasList: function() {
             return this.main_collection.length > 0;
-	    },
+		},
+		getMessages(){
+			if (this.$mqtt !== null && typeof this.$mqtt !== 'undefined'){
+				return this.$mqtt.getMessage()
+			}
+		},
 
     },// --- End of computed --- //
     methods: {
-					// This allows a page to set integrity-table cell styles by field and value conditionally
-			cellStyleClass(item, field){
-				if(field == "column5" && item.column5 > '2020-01-01'){
-					return 'int-table-cell-pink'
+		// This allows a page to set integrity-table cell styles by field and value conditionally
+		cellStyleClass(item, field){
+			if(field == "column5" && item.column5 > '2020-01-01'){
+				return 'int-table-cell-pink'
+			}
+			return ""
+		},
+		// This allows a page to set integrity-table column widths and visibility
+		colWidthClass(field){
+			if(field == "column1"){
+				return 'int-table-width-5'
+			} else if (field == "column10") {
+				return 'int-table-width-3'
+			} else if (["column3", "column7", "column8", "column9"].indexOf(field) > -1) {
+				return 'int-table-width-none'
+			}
+			return "int-table-width-1"
+		},
+		successClicked(){
+			toastr.success("Success")
+		},
+		primaryClicked(){
+			toastr.info("Primary")
+		},
+		openDrawer(){
+			this.drawerShow = true
+		},
+		async retrieveKits(){
+			var baseUrl = this.config.API_PROTOCOL + "://" + this.config.API_HOST + "/" + this.config.API_PATH
+			Integrity.get(baseUrl +'/kits')
+			.done(function(response){
+				if (response === null)
+					vm.main_collection = [{kit: "No kits found", 'in-stock':0, total:0, percent:"0%"}]
+				else{
+					vm.main_collection = response
+					Integrity.setState("main", JSON.stringify(vm.main_collection))
+					Integrity.setState("date",Date.now())
 				}
-				return ""
-			},
-			// This allows a page to set integrity-table column widths and visibility
-			colWidthClass(field){
-				if(field == "column1"){
-					return 'int-table-width-5'
-				} else if (field == "column10") {
-					return 'int-table-width-3'
-				} else if (["column3", "column7", "column8", "column9"].indexOf(field) > -1) {
-					return 'int-table-width-none'
-				}
-				return "int-table-width-1"
-			},
-			successClicked(){
-				toastr.success("Success")
-			},
-			primaryClicked(){
-				toastr.info("Primary")
-			},
-			openDrawer(){
-				this.drawerShow = true
-			},
-			async retrieveKits(){
-				Integrity.get(baseUrl +'/kits')
-				.done(function(response){
-					if (response === null)
-						vm.main_collection = [{kit: "No kits found", 'in-stock':0, total:0, percent:"0%"}]
-					else
-						vm.main_collection = response
-				})
-				.fail(function(err) {
-					vm.main_collection = [{kit: "Err", 'in-stock':-1, total:-1, percent:"Err"}]
-					console.log(err);
-				});
+			})
+			.fail(function(err) {
+				vm.main_collection = [{kit: "Err", 'in-stock':-1, total:-1, percent:"Err"}]
+				console.log(err);
+			});
 
-			},
-        	async onSelect(item) {
-            	try{
-					this.kit_name = item.kit
-					var url = window.location.pathname;
-					var path = url.substring(0, url.lastIndexOf("/"))
-					window.location.href = path + `/detail.html?name=${this.kit_name}`;
+		},
+		async onSelect(item) {
+			try{
+				this.kit_name = item.kit
+				var url = window.location.pathname;
+				var path = url.substring(0, url.lastIndexOf("/"))
+				window.location.href = path + `/detail.html?name=${this.kit_name}`;
 
-				} catch(err) {
-					console.log(err);
-				}
-      	  	},
+			} catch(err) {
+				console.log(err);
+			}
+		},
         
     }, // --- End of methods --- //
     watch: {
+		getMessages: function(newValue, oldValue){
+			if (newValue.hasOwnProperty("message") && newValue.hasOwnProperty("destination")){
+				let destination =newValue.destination
+				let message = newValue.message
+				console.log(destination + " : " + message)
+
+				if (destination === "message")	
+					this.update_msg = message
+				else if (destination === "value")
+					this.update_value = message
+				else if (destination === "kit")
+					this.kit_name = message
+			}
+		},
+		config: function(newValue){
+			if (this.config !== null && typeof this.config !== 'undefined' && 
+				newValue !== null && typeof newValue !== 'undefined' &&
+				this.main_collection.length === 0){
+					this.retrieveKits()
+					this.$mqtt.connect()
+			}
+
+		}
     },  // --- End of watch --- //
-    // Available hooks: init,mounted,created,updated,destroyed
+	// Available hooks: init,mounted,created,updated,destroyed
     created: function(){
-        this.retrieveKits()
-    },
+		const storedList = JSON.parse(localStorage.getItem('main'))
+		const storedDate = JSON.parse(localStorage.getItem('date'))
+		if (storedList && storedDate) {
+			if ((Date.now() - storedDate) <= refreshListTimeout)
+				this.main_collection = storedList
+		}
+	},
     mounted: function(){
 
-		$.ajaxSetup({
-		headers: {
-			"Content-type": "application/json"
-		},
-		timeout: 5000 //Time in milliseconds
-		});
-
-		var MQTT_CLIENT_ID = "iot_web_"+Math.floor((1 + Math.random()) * 0x10000000000).toString(16);
-		var socket = new Paho.Client(host, ws_port, MQTT_CLIENT_ID)
-
-        var vueApp = this
-        var reconnectTimeout = 2000
-        MQTTConnect()
-
-        function MQTTConnect() {
-            var options = {
-                timeout: 3,
-                onSuccess: onConnect,
-                onFailure: onFailure,
-                
-            };
-            socket.onMessageArrived = onMessageArrived
-            socket.connect(options)
-        }
-
-        function onFailure(message) {
-			console.log("Connection Attempt to Host Failed");
-			setTimeout(MQTTConnect, reconnectTimeout);
-        }
-        function onConnect() {
-            socket.subscribe("message");
-            socket.subscribe("value");
-            console.log("MQTT Connected");
-        }
-        function onMessageArrived(msg) {
-            console.log(msg.destinationName + " : " + msg.payloadString)
-			if (msg.destinationName === "message")
-				var msg_obj = JSON.parse(msg.payloadString)
-				if (msg_obj.hasOwnProperty("message") && msg_obj.hasOwnProperty("mode") && msg_obj.hasOwnProperty("value")){
-					vueApp.update_msg = msg_obj.message
-				}
-            else if (msg.destinationName === "value")
-                vueApp.update_value = msg.payloadString
-            else if (msg.destinationName === "kit")
-                vueApp.kit_name = msg.payloadString
-        }
-
-    }, // --- End of hooks --- //
+	}, 
+	updated(){
+		console.log("updated")
+	},
+	destroyed(){
+		console.log("destroyed")
+	},
+	// --- End of hooks --- //
 }) // --- End of vm --- //
 </script>
 </body>
