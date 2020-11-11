@@ -28,85 +28,92 @@
 	<script src="/js/integrity-drawer.js"></script>
 	<script src="/lib/js/paho-mqtt.js"></script>		<!-- added for server mqtt comms -->
 	<script src="/lib/js/plugins/mqtt.js"></script>		<!-- added for server mqtt comms -->
-	<script src="/lib/js/plugins/store.js"></script>	<!-- added for state store  -->
+
 	
 </head>
 <style>
 /* This is the last style tag linked into every page */
 html {
-	padding: 0;
+    padding: 0;
 }
-html, body, #app {
-	height: 100%;
-	overflow: hidden;
+html,
+body,
+#app {
+    height: 100%;
+    overflow: hidden;
 }
 .app-container {
-	height: calc(100% - 40px);
-	padding: 10px;
+    height: calc(100% - 40px);
+    padding: 10px;
 }
 
-[v-cloak] {visibility: hidden;}
+[v-cloak] {
+    visibility: hidden;
+}
 </style>
 <template>
-	<!-- This is injected as the first child to #app in each page -->
-	<integrity-navbar></integrity-navbar>
+    <!-- This is injected as the first child to #app in each page -->
+    <integrity-navbar></integrity-navbar>
 </template>
 <script>
+Vue.use(Mqtt);
 
-	Vue.use(Mqtt)
+/* This is injected right before every pages view model is initialized */
+Vue.mixin({
+    data() {
+        return {
+            config: null,
+        };
+    },
+    // Global mixin standard components
+    components: {
+        "vue-autocomplete": Autocomplete,
+        "vue-multiselect": window.VueMultiselect.default,
+        "vue-tour": window["vue-tour"].default,
+    },
+    // Provide sensible callback defaults in the event they are not defined in the page module
+    methods: {
+        // Default limit text function for multiselect
+        limitText(count) {
+            return "(" + count + ") selected";
+        },
+        // Default drawer closer, assumes presence of drawerShow data var
+        closeDrawer() {
+            this.drawerShow = false;
+        },
+        // No style class if one not defined
+        cellStyleClass(item, field) {
+            return "";
+        },
+        // Standard col width if one not defined
+        colWidthClass(field) {
+            return "int-table-width-1";
+        },
+    },
+    async created() {
+        $.ajaxSetup({
+            headers: {
+                "Content-type": "application/json",
+            },
+            timeout: 5000, //Time in milliseconds
+        });
 
-	/* This is injected right before every pages view model is initialized */
-	Vue.mixin({
-		data(){
-			return{
-				config: null,
-			}
-		},
-		// Global mixin standard components
-		components: {
-			"vue-autocomplete": Autocomplete,
-			"vue-multiselect": window.VueMultiselect.default,
-			"vue-tour": window["vue-tour"].default,
-		},
-		// Provide sensible callback defaults in the event they are not defined in the page module
-		methods: {
-			// Default limit text function for multiselect
-			limitText(count){
-				return "(" + count + ") selected"
-			},
-			// Default drawer closer, assumes presence of drawerShow data var
-			closeDrawer(){
-				this.drawerShow = false
-			},
-			// No style class if one not defined
-			cellStyleClass(item, field){
-				return ""
-			},
-			// Standard col width if one not defined
-			colWidthClass(field){
-				return "int-table-width-1"
-			},
-		},
-		async created(){
-			try {
-				const response = await $.ajax({
-					url: '../runtime_config.json',
-					type: 'GET'
-				})
-				if (response === null)
-					console.log("config file not found!")
-				else
-					this.config = response
-					Integrity.setCookie("config", JSON.stringify(response))
-			} catch(err) {
-				console.log(err)
-			}
-		},
-	})
+        try {
+            const response = await $.ajax({
+                url: "../runtime_config.json",
+                type: "GET",
+            });
+            if (response === null) console.log("config file not found!");
+            else this.config = response;
+        } catch (err) {
+            console.log(err);
+        }
 
-	// This simulates a user having securely logged in
-	ilib.setCookie("fullname", "Demo User")
-	ilib.setCookie("role", "Admin")
+        Integrity.setCookie();
+    },
+});
 
-
+// This simulates a user having securely logged in
+ilib.setCookie("fullname", "Demo User");
+ilib.setCookie("role", "Admin");
 </script>

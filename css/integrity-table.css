@@ -1,16 +1,17 @@
 #int-table-wrapper {
-	height: 100%;
+	height: calc(100% - 50px);
 }
 
 #int-table-container {
-	height: calc(100% - 100px);
+	height: calc(100% - 50px);
+	padding-bottom: 50px;
 }
 
 .int-table {
 	height: 100%;
 	widows: 100%;
 	padding-top: 20px;
-	padding-bottom: 20px;
+	padding-bottom: 100px;
 }
 
 .int-table-header {
@@ -50,6 +51,7 @@
 .int-table-body {
 	height: calc(100% - 46px);
 	overflow-y: scroll;
+	border: 1px solid #c0c0c0
 }
 
 .int-table-cell-pink {
