@@ -6,6 +6,7 @@
         <title>Demo - List</title>
         <!-- APP-LINKS -->
     </head>
+	<body>
     <style>
         /* APP-STYLE */
     </style>
@@ -16,7 +17,7 @@
             <integrity-table
                 v-if="hasList"
                 :name="pageName"
-                :collection="main_collection"
+                :collection="mainCollection"
                 :columns="columns"
                 @select="onSelect"
             >
@@ -29,7 +30,7 @@
                         </div>
                     </div>
                     <div class="row justify-content-center">
-                        <strong>{{ update_msg }}</strong>
+                        <strong>{{ updateMsg }}</strong>
                     </div>
                 </div>
             </div>
@@ -53,16 +54,16 @@
         const vm = new Vue({
             el: "#app",
             data: {
-                update_msg: "Waiting for server...",
-                update_value: 0,
+                updateMsg: "Waiting for server...",
+                updateValue: 0,
                 pageName: "Kitting Inventory",
                 columns: ["Kit", "In-stock", "Required", " Status"],
-                main_collection: [],
-                kit_name: "",
+                mainCollection: [],
+                kitName: "",
             },
             computed: {
                 hasList: function () {
-                    return this.main_collection.length > 0;
+                    return this.mainCollection.length > 0;
                 },
                 getMessages() {
                     if (
@@ -115,7 +116,7 @@
                     Integrity.get(baseUrl + "/kits")
                         .done(function (response) {
                             if (response === null){
-                                vm.main_collection = [
+                                vm.mainCollection = [
                                     {
                                         kit: "No kits found",
                                         "in-stock": 0,
@@ -124,16 +125,16 @@
                                     },
                                 ];
                             } else {
-                                vm.main_collection = response;
+                                vm.mainCollection = response;
                                 Integrity.setState(
                                     "main",
-                                    JSON.stringify(vm.main_collection)
+                                    JSON.stringify(vm.mainCollection)
                                 );
                                 Integrity.setState("date", Date.now());
                             }
                         })
                         .fail(function (err) {
-                            vm.main_collection = [
+                            vm.mainCollection = [
                                 {
                                     kit: "Err",
                                     "in-stock": -1,
@@ -146,11 +147,11 @@
                 },
                 onSelect(item) {
                     try {
-                        this.kit_name = item.kit;
+                        this.kitName = item.kit;
                         var url = window.location.pathname;
                         var path = url.substring(0, url.lastIndexOf("/"));
                         window.location.href =
-                            path + `/detail.html?name=${this.kit_name}`;
+                            path + `/detail.html?name=${this.kitName}`;
                     } catch (err) {
                         console.log(err);
                     }
@@ -163,14 +164,22 @@
                         newValue.hasOwnProperty("destination")
                     ) {
                         let destination = newValue.destination;
-                        let message = newValue.message;
+                        let message = JSON.parse(newValue.message);
                         console.log(destination + " : " + message);
 
-                        if (destination === "message")
-                            this.update_msg = message;
-                        else if (destination === "value")
-                            this.update_value = message;
-                        else if (destination === "kit") this.kit_name = message;
+						if (destination === "message") {
+							if (
+								message.hasOwnProperty("message") &&
+								message.hasOwnProperty("mode") &&
+								message.hasOwnProperty("value")
+							) {
+								var mode = message.mode;
+								if (mode == "single") {
+									this.updateMsg = message.message;
+									this.updateValue = null;
+								} 
+							}
+						}
                     }
                 },
                 config: function (newValue) {
@@ -179,7 +188,7 @@
                         typeof this.config !== "undefined" &&
                         newValue !== null &&
                         typeof newValue !== "undefined" &&
-                        this.main_collection.length === 0
+                        this.mainCollection.length === 0
                     ) {
                         this.retrieveKits();
                         this.$mqtt.connect();
@@ -192,7 +201,7 @@
                 const storedDate = JSON.parse(localStorage.getItem("date"));
                 if (storedList && storedDate) {
                     if (Date.now() - storedDate <= refreshListTimeout){
-                        this.main_collection = storedList;
+                        this.mainCollection = storedList;
                     }
                 }
             },

@@ -95,7 +95,7 @@ Vue.mixin({
             headers: {
                 "Content-type": "application/json",
             },
-            timeout: 5000, //Time in milliseconds
+            timeout: 10000, //Time in milliseconds
         });
 
         try {
